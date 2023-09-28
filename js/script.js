@@ -139,7 +139,6 @@ async function displayMovieDetails() {
   document.querySelector('#movie-details').appendChild(div);
 }
 
-// Display Show Details
 async function displayShowDetails() {
   const show_id = window.location.search.split('=')[1];
 
@@ -226,6 +225,29 @@ async function fetchAPIData(endpoint) {
   return data;
 }
 
+// Display Slider
+async function displaySlider() {
+  const { results } = await fetchAPIData('movie/now_playing');
+
+  results.forEach((movie) => {
+    const div = document.createElement('div');
+    div.classList.add('swiper-slide');
+
+    div.innerHTML = `
+      <a href="movie-details.html?id=${movie.id}">
+        <img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title}" />
+      </a>
+      <h4 class="swiper-rating">
+        <i class="fas fa-star text-secondary"></i> ${movie.vote_average} / 10
+      </h4>
+    `;
+
+    document.querySelector('.swiper-wrapper').appendChild(div);
+
+    initSwiper();
+  });
+}
+
 // Display Backdrop on details pages
 function displayBackgroundImage(type, backgroundPath) {
   const overlayDiv = document.createElement('div');
@@ -246,6 +268,30 @@ function displayBackgroundImage(type, backgroundPath) {
   } else {
     document.querySelector('#show-details').appendChild(overlayDiv);
   }
+}
+
+function initSwiper() {
+  const swiper = new Swiper('.swiper', {
+    slidesPerView: 1,
+    spaceBetween: 30,
+    freeMode: true,
+    loop: true,
+    autoplay: {
+      delay: 9000,
+      disableOnInteraction: false,
+    },
+    breakpoints: {
+      500: {
+        slidesPerView: 2,
+      },
+      700: {
+        slidesPerView: 3,
+      },
+      1200: {
+        slidesPerView: 4,
+      },
+    },
+  });
 }
 
 function addCommasToNumber(number) {
@@ -283,6 +329,7 @@ function pageRouter() {
   switch (global.currentPage) {
     // case '/flixx-app/index.html':
     case pages.home:
+      displaySlider();
       displayPopularMovies();
       break;
     case pages.shows:
