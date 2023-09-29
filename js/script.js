@@ -1,5 +1,15 @@
 const global = {
-  currentPage: window.location.pathname,
+  current_page: window.location.pathname,
+  search: {
+    term: '',
+    type: '',
+    page: 1,
+    total_pages: 1,
+  },
+  api: {
+    api_key: 'e50ce2779d800ddea3c6aa5e577a36a9',
+    api_url: 'https://api.themoviedb.org/3/', // The 3 is the version
+  },
 };
 
 // Display popylar tv shows
@@ -210,12 +220,30 @@ async function displayShowDetails() {
 
 // Fetch data from TMDB API
 async function fetchAPIData(endpoint) {
-  const API_KEY = 'e50ce2779d800ddea3c6aa5e577a36a9';
-  const API_URL = 'https://api.themoviedb.org/3/'; // The 3 is the version
+  const API_KEY = global.api.api_key;
+  const API_URL = global.api.api_url;
 
   showSpinner();
   const response = await fetch(
     `${API_URL}${endpoint}?api_key=${API_KEY}&language=en-US`
+  );
+
+  const data = await response.json();
+
+  hideSpinner();
+
+  return data;
+}
+
+// Search data from TMDB API
+async function searchAPIData() {
+  const API_KEY = global.api.api_key;
+  const API_URL = global.api.api_url;
+
+  showSpinner();
+
+  const response = await fetch(
+    `${API_URL}search/${global.search.type}?api_key=${API_KEY}&language=en-US&query=${global.search.term}`
   );
 
   const data = await response.json();
@@ -248,25 +276,53 @@ async function displaySlider() {
   });
 }
 
+// Search
+async function search() {
+  const query_string = window.location.search; // Returns the query strings. Everything from the ?
+  const url_params = new URLSearchParams(query_string); // Use URLSearchParams to extract parameters from query strings
+
+  // Add the type and term to the global object
+  global.search.type = url_params.get('type');
+  global.search.term = url_params.get('search-term');
+
+  if (global.search.term !== '' && global.search.term !== null) {
+    const results = await searchAPIData();
+    console.log(results);
+  } else {
+    showAlert('Please enter search term');
+  }
+}
+
+// Show Alert
+function showAlert(message, className = 'error') {
+  const alert_el = document.createElement('div');
+  const msg = document.createTextNode(message);
+  alert_el.classList.add('alert', className);
+  alert_el.appendChild(msg);
+  document.querySelector('#alert').appendChild(alert_el);
+
+  setTimeout(() => alert_el.remove(), 3000);
+}
+
 // Display Backdrop on details pages
 function displayBackgroundImage(type, backgroundPath) {
-  const overlayDiv = document.createElement('div');
-  overlayDiv.style.backgroundImage = `url(https://image.tmdb.org/t/p/original/${backgroundPath})`;
-  overlayDiv.style.backgroundSize = 'cover';
-  overlayDiv.style.backgroundPosition = 'center';
-  overlayDiv.style.backgroundRepeat = 'no-repeat';
-  overlayDiv.style.height = '100vh';
-  overlayDiv.style.width = '100vw';
-  overlayDiv.style.position = 'absolute';
-  overlayDiv.style.top = '0';
-  overlayDiv.style.left = '0';
-  overlayDiv.style.zIndex = '-1';
-  overlayDiv.style.opacity = '0.1';
+  const overlay_div = document.createElement('div');
+  overlay_div.style.backgroundImage = `url(https://image.tmdb.org/t/p/original/${backgroundPath})`;
+  overlay_div.style.backgroundSize = 'cover';
+  overlay_div.style.backgroundPosition = 'center';
+  overlay_div.style.backgroundRepeat = 'no-repeat';
+  overlay_div.style.height = '100vh';
+  overlay_div.style.width = '100vw';
+  overlay_div.style.position = 'absolute';
+  overlay_div.style.top = '0';
+  overlay_div.style.left = '0';
+  overlay_div.style.zIndex = '-1';
+  overlay_div.style.opacity = '0.1';
 
   if (type === 'movie') {
-    document.querySelector('#movie-details').appendChild(overlayDiv);
+    document.querySelector('#movie-details').appendChild(overlay_div);
   } else {
-    document.querySelector('#show-details').appendChild(overlayDiv);
+    document.querySelector('#show-details').appendChild(overlay_div);
   }
 }
 
@@ -326,7 +382,7 @@ function pageRouter() {
     movie_details: '/flixx-app/movie-details.html',
   };
 
-  switch (global.currentPage) {
+  switch (global.current_page) {
     // case '/flixx-app/index.html':
     case pages.home:
       displaySlider();
@@ -342,7 +398,7 @@ function pageRouter() {
       displayShowDetails();
       break;
     case pages.search:
-      console.log('search');
+      search();
       break;
   }
 }
